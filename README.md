@@ -1,59 +1,53 @@
-# Token Radar — peer-priced launch radar
+# Token Launch Radar — curve-1 (make.fun token-radar-01, v2)
 
-A program that reads a sealed snapshot of the DeFi protocol universe and writes a
-web dashboard ranking the protocols that record no token yet by what their launch
-would be worth, each with a concrete plan to farm it. Built for make.fun's
-token-radar-01 bounty.
+A radar for pre-token protocols: it ranks 198 of them by an implied launch
+value read off the market's own size curve, prices the farm for each one, and
+shows the uncertainty instead of hiding it.
 
-## The model
+## The model, in one paragraph
 
-Each protocol is priced at what the market already pays for the same kind of
-business: the **median market-cap-per-dollar-of-TVL of its traded peers**, computed
-from the snapshot at run time — never typed in. A category with fewer than three
-traded peers falls back to the global median (0.2138× on this snapshot).
-
-```
-implied value = TVL
-  × peer multiple    median mcap/TVL of the category's traded peers, clamped [0.05, 1.50],
-                     rounded to 4 decimals before use
-  × growth           1 + half the 7-day TVL change, change clamped to [-60, +120]%
-  × maturity         0.70 at launch, rising to 1.00 after two years; unknown age counts as 365 days
-  × breadth          +2% per extra chain, up to ten extra chains
-```
-
-The board holds every launch candidate in the snapshot: all 40 watchlist protocols
-plus 158 early finds below the $50M floor (198 rows). The watchlist's exclusion rule
-is applied board-wide, so no wrapped, staked or bridged product, no versioned copy
-and no exchange-branded product appears. The dashboard's Live tab shows the 128
-protocols whose token already trades, priced by the same model, for comparison.
-
-## Farm plans
-
-Six steps per protocol, each with what it costs and how long it takes: set up a fresh
-wallet, use the protocol, use it again a week later, use it on a second chain (or
-check in weekly when it runs on one chain only), hold for 30–60 days by the
-protocol's age, then claim — only from the protocol's own published link, and never
-by paying anyone. The action follows the category (lend, add liquidity, deposit in a
-vault, mint, bridge…) and the capital follows the TVL tier ($50–$250).
-
-## How to run
-
-Node 22 or later, standard library only; nothing is installed.
-
-```
-MAKEFUN_OUTPUT_DIR=out node main.ts --input <snapshot.json>
-```
-
-That writes `board.json`, `data.js`, `dashboard/`, `screenshots/` and `dossier.json`
-into the output directory. The entry ships its three screenshots (board, detail view,
-filtered view, 1440×900), so they must exist in `screenshots/` before it runs.
-The dashboard is static and loads no network: open `out/dashboard/index.html`
-from a local server.
+An OLS fit of log10(market cap) on log10(TVL) over the 128 traded protocols
+in the sealed snapshot (`log10(mcap) = 3.0247 + 0.5223 · log10(TVL)`, R² 0.19),
+plus a shrunk category effect (≥5 traded peers, winsorized, clamped), plus
+three bounded factors: 7-day growth, age with no token, chain breadth. Every
+row carries a P25–P75 band from the model's own residuals, a reference-class
+launch chance with an expected value, farm economics (airdrop per $1,000,
+ticket, gas, net-of-gas verdict), and a six-step farm plan. Leave-one-out
+backtest: median miss ×3.45, against ×5.07 for the flat global-median
+multiple. Full method: `dashboard/METHOD.md`.
 
 ## Layout
 
-- `main.ts` — entrypoint: snapshot in, board + data + dashboard + dossier out
-- `lib/model.ts` — the radar-2 model, the board builder, the farm-plan generator
-- `vendor/makefun-board.ts` — make.fun's dossier library, byte-identical to the kit
-- `dashboard/` — the static page (index.html, app.css, app.js)
-- `screenshots/` — the three screenshots of the page
+- `main.ts` — entrypoint. Reads the snapshot, builds the board, writes
+  `board.json`, `data.js`, `dashboard/`, `screenshots/`, `dossier.json`.
+- `lib/model.ts` — the pure model: curve fit, category effects, pricing,
+  backtest, farm economics, farm plans, board selection.
+- `vendor/makefun-board.ts` — the kit's dossier builder, copied byte-for-byte.
+- `dashboard/` — the static dashboard (index.html, app.css, app.js) plus
+  `METHOD.md`, which the dossier prints for the judge.
+- `screenshots/` — board, detail, filtered.
+
+## Run
+
+```sh
+MAKEFUN_OUTPUT_DIR=out node main.ts --input /path/to/snapshot.json
+```
+
+Or with the kit layout: `MAKEFUN_INPUT_DIR=.../input MAKEFUN_OUTPUT_DIR=out
+node main.ts`. Deterministic: two runs write identical bytes.
+
+## Verify
+
+```sh
+python3 ../tools/validate_gate.py out ../kit/token-radar-01-kit/input/snapshot.json
+node ../tools/render_check.mjs out
+```
+
+## v2 vs v1
+
+v1 priced every protocol at a flat category-median multiple (0.21× for nearly
+everyone) and showed a point estimate only. v2 replaces it with the fitted
+size curve, adds the leave-one-out backtest, P25–P75 ranges, farm economics
+in the main table, launch chance + expected value, and a denser cover with
+the full funnel, the fitted formula, and the calibration chart. See
+`../REPORT-v2.md` for the full comparison.

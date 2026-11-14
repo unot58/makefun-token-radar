@@ -3,68 +3,105 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Token Radar — peer-priced launch radar</title>
+<title>Token Launch Radar — curve-1</title>
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
-<header class="hero">
-  <p class="kicker">Token Radar · Pre-token protocols, ranked by implied value</p>
-  <h1>Which launch is worth farming next?</h1>
-  <p class="lede">Every protocol on this board records no token yet. Each one is priced at the
-  median market-cap-per-dollar-of-TVL of its traded peers — the market's own pricing,
-  computed from the snapshot — and every row carries a concrete plan to farm it.</p>
-  <div class="spot" id="spotlight" aria-label="Top three launches"></div>
+<header class="topbar">
+  <div class="brand">
+    <span class="mark" aria-hidden="true">◉</span>
+    <div>
+      <h1>TOKEN LAUNCH RADAR</h1>
+      <p class="tagline">MODEL CURVE-1 · SIZE-CURVE PRICED, BACKTESTED</p>
+    </div>
+  </div>
+  <div class="topmeta">
+    <span>Snapshot 2026-11-14 · DefiLlama</span>
+    <span class="badge" id="matchBadge">— rows match board.json</span>
+  </div>
 </header>
+
+<section class="stats" id="stats" aria-label="Funnel"></section>
+
+<section class="formula" aria-label="The model">
+  <div class="formula-eq" id="formulaEq">—</div>
+  <p class="formula-note" id="formulaNote">—</p>
+</section>
+
+<nav class="tabs" aria-label="Views">
+  <button data-tab="board" class="active">Pre-token board <b id="countBoard">—</b></button>
+  <button data-tab="comps">Traded comparables <b id="countComps">—</b></button>
+  <button data-tab="setaside">Set aside <b id="countSetAside">—</b></button>
+  <button data-tab="method">Method &amp; calibration</button>
+</nav>
+
+<section class="filters" id="filters">
+  <label class="search"><span>Search</span><input id="q" type="search" placeholder="protocol or slug…" autocomplete="off"></label>
+  <div class="chips" role="group" aria-label="Tier">
+    <button data-tier="all" class="chip active">All</button>
+    <button data-tier="watchlist" class="chip">Watchlist</button>
+    <button data-tier="early" class="chip">Early</button>
+  </div>
+  <label><span>Category</span><select id="category"><option value="">All categories</option></select></label>
+  <label><span>Chain</span><select id="chain"><option value="">All chains</option></select></label>
+  <label><span>Verdict</span><select id="verdict">
+    <option value="">Any verdict</option>
+    <option value="PAYS OFF">Pays off</option>
+    <option value="MARGINAL">Marginal</option>
+    <option value="UNDERWATER">Underwater</option>
+  </select></label>
+  <span class="showing" id="showing">—</span>
+</section>
+
 <main>
-  <section class="controls" aria-label="Filters">
-    <input id="q" type="search" placeholder="Search a protocol…" aria-label="Search protocols">
-    <select id="cat" aria-label="Filter by category"><option value="">All categories</option></select>
-    <select id="chain" aria-label="Filter by chain"><option value="">All chains</option></select>
-    <div class="tabs" role="tablist" aria-label="Token status">
-      <button type="button" data-tab="pre" aria-selected="true">Pre-token</button>
-      <button type="button" data-tab="live" aria-selected="false">Live-token</button>
+  <section id="tableSection">
+    <p class="view-intro" id="tableIntro"></p>
+    <table id="mainTable">
+      <thead id="mainHead"></thead>
+      <tbody id="mainBody"></tbody>
+    </table>
+    <p class="footnote" id="tableFootnote"></p>
+  </section>
+
+  <section id="view-method" class="view">
+    <div class="model" id="methodModel">
+      <h2>How the radar prices a launch</h2>
+      <ol class="method-steps">
+        <li><b>Fit the size curve.</b> <span id="methodCurve">—</span></li>
+        <li><b>Adjust by category.</b> <span id="methodCategory">—</span></li>
+        <li><b>Adjust by growth, age, breadth.</b> <span id="methodFactors">—</span></li>
+        <li><b>Show the band, not just the point.</b> <span id="methodBand">—</span></li>
+        <li><b>Price the farm.</b> <span id="methodFarm">—</span></li>
+        <li><b>Backtest it blind.</b> <span id="methodBacktest">—</span></li>
+      </ol>
+      <p class="method-note">The full method, with every parameter, assumption and limitation, is in METHOD.md — shipped inside this dashboard folder and printed in the dossier.</p>
+    </div>
+    <div class="calib">
+      <h2>Calibration: the fitted curve against the 128 traded protocols</h2>
+      <div id="scatter" role="img" aria-label="Log-log scatter of market cap against TVL with the fitted curve"></div>
+      <p class="calib-note">Each dot is a traded protocol. The line is the OLS fit. The shaded band is the P25–P75 residual band. R² is 0.19 — the market's own scatter is wide, which is why every row carries a range.</p>
+    </div>
+    <div class="funnel-detail">
+      <h2>The funnel, in full</h2>
+      <ol id="funnelList"></ol>
+    </div>
+    <div class="top5">
+      <h2>Top five by implied value</h2>
+      <div class="top5-row" id="top5Row"></div>
+    </div>
+    <div class="recompute">
+      <h2>Recompute any row</h2>
+      <p>Every value on this page is recomputed in your browser from the fitted parameters — open the console and call <code>recompute(slug)</code>. The parameters below are the fitted ones, printed from the same model that built board.json.</p>
+      <pre id="paramsBox"></pre>
     </div>
   </section>
-  <p class="count" id="count"></p>
-  <p class="livenote" id="livenote" hidden>These protocols already trade — shown for
-  comparison, so you can see what the market actually pays against what a launch is
-  priced at. They are not launch candidates.</p>
-  <div class="tablewrap">
-  <table>
-    <thead><tr>
-      <th><button type="button" data-sort="rank">Rank</button></th>
-      <th><button type="button" data-sort="name">Protocol</button></th>
-      <th><button type="button" data-sort="tvl">TVL</button></th>
-      <th><button type="button" data-sort="change">7d</button></th>
-      <th><button type="button" data-sort="age">Age</button></th>
-      <th><button type="button" data-sort="multiple">Peer ×</button></th>
-      <th><button type="button" data-sort="implied">Implied value</button></th>
-    </tr></thead>
-    <tbody id="rows"></tbody>
-  </table>
-  </div>
-  <p class="empty" id="empty" hidden>No protocol matches these filters.</p>
-  <section class="model" id="model">
-    <h2>How the radar prices a launch</h2>
-    <p class="formula">implied value = TVL × peer multiple × growth × maturity × breadth</p>
-    <div id="factors"></div>
-    <h3>Peer multiples, from the snapshot's traded protocols</h3>
-    <table class="peers">
-      <thead><tr><th>Category</th><th>Peer multiple</th><th>Traded peers</th></tr></thead>
-      <tbody id="peers"></tbody>
-    </table>
-    <p class="note" id="modelnote"></p>
-  </section>
 </main>
-<footer>
-  <p id="coverage"></p>
-  <p>Implied values are this radar's own claim, computed from the snapshot's figures —
-  never a prediction that a token will launch, or when. A protocol "records no token" in
-  DefiLlama's data; that is not proof it has none.</p>
-  <p>Source: DefiLlama protocols snapshot, fetched 2026-11-14. No network: this page
-  loads only its own files.</p>
-</footer>
-<dialog class="detail" id="detail"></dialog>
+
+<dialog class="detail" id="detail">
+  <form method="dialog"><button class="close" aria-label="Close detail">×</button></form>
+  <div id="detailBody"></div>
+</dialog>
+
 <script src="../data.js"></script>
 <script src="app.js"></script>
 </body>
