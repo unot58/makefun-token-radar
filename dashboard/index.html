@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Radar — peer-priced launch radar</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="hero">
+  <p class="kicker">Token Radar · Pre-token protocols, ranked by implied value</p>
+  <h1>Which launch is worth farming next?</h1>
+  <p class="lede">Every protocol on this board records no token yet. Each one is priced at the
+  median market-cap-per-dollar-of-TVL of its traded peers — the market's own pricing,
+  computed from the snapshot — and every row carries a concrete plan to farm it.</p>
+  <div class="spot" id="spotlight" aria-label="Top three launches"></div>
+</header>
+<main>
+  <section class="controls" aria-label="Filters">
+    <input id="q" type="search" placeholder="Search a protocol…" aria-label="Search protocols">
+    <select id="cat" aria-label="Filter by category"><option value="">All categories</option></select>
+    <select id="chain" aria-label="Filter by chain"><option value="">All chains</option></select>
+    <div class="tabs" role="tablist" aria-label="Token status">
+      <button type="button" data-tab="pre" aria-selected="true">Pre-token</button>
+      <button type="button" data-tab="live" aria-selected="false">Live-token</button>
+    </div>
+  </section>
+  <p class="count" id="count"></p>
+  <p class="livenote" id="livenote" hidden>These protocols already trade — shown for
+  comparison, so you can see what the market actually pays against what a launch is
+  priced at. They are not launch candidates.</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr>
+      <th><button type="button" data-sort="rank">Rank</button></th>
+      <th><button type="button" data-sort="name">Protocol</button></th>
+      <th><button type="button" data-sort="tvl">TVL</button></th>
+      <th><button type="button" data-sort="change">7d</button></th>
+      <th><button type="button" data-sort="age">Age</button></th>
+      <th><button type="button" data-sort="multiple">Peer ×</button></th>
+      <th><button type="button" data-sort="implied">Implied value</button></th>
+    </tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  </div>
+  <p class="empty" id="empty" hidden>No protocol matches these filters.</p>
+  <section class="model" id="model">
+    <h2>How the radar prices a launch</h2>
+    <p class="formula">implied value = TVL × peer multiple × growth × maturity × breadth</p>
+    <div id="factors"></div>
+    <h3>Peer multiples, from the snapshot's traded protocols</h3>
+    <table class="peers">
+      <thead><tr><th>Category</th><th>Peer multiple</th><th>Traded peers</th></tr></thead>
+      <tbody id="peers"></tbody>
+    </table>
+    <p class="note" id="modelnote"></p>
+  </section>
+</main>
+<footer>
+  <p id="coverage"></p>
+  <p>Implied values are this radar's own claim, computed from the snapshot's figures —
+  never a prediction that a token will launch, or when. A protocol "records no token" in
+  DefiLlama's data; that is not proof it has none.</p>
+  <p>Source: DefiLlama protocols snapshot, fetched 2026-11-14. No network: this page
+  loads only its own files.</p>
+</footer>
+<dialog class="detail" id="detail"></dialog>
+<script src="../data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
